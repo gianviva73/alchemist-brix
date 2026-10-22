@@ -1,0 +1,551 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>The Homemade Alchemist — Calcolatore Brix & Dosi</title>
+    <!-- Tailwind CSS -->
+    <script src="https://cdn.tailwindcss.com"></script>
+    <!-- Lucide Icons -->
+    <script src="https://unpkg.com/lucide@latest"></script>
+    <style>
+        @import url('https://fonts.googleapis.com/css2?family=Cinzel:wght@600;800&family=Plus+Jakarta+Sans:wght@500;700;800&display=swap');
+
+        body {
+            font-family: 'Plus Jakarta Sans', sans-serif;
+            background-color: #0d0f12;
+            color: #f1f5f9;
+        }
+
+        .font-serif-title {
+            font-family: 'Cinzel', serif;
+        }
+
+        /* Accessibilità: Input e Select con caratteri grandi e ben visibili */
+        input, select, button {
+            font-size: 1.25rem !important; /* Minimo ~20px per controlli */
+            line-height: 1.75rem !important;
+        }
+
+        /* Personalizzazione Scrollbar */
+        ::-webkit-scrollbar {
+            width: 8px;
+        }
+        ::-webkit-scrollbar-track {
+            background: #1e293b;
+        }
+        ::-webkit-scrollbar-thumb {
+            background: #d97706;
+            border-radius: 4px;
+        }
+
+        .card-alchemy {
+            background: rgba(30, 41, 59, 0.85);
+            border: 2px solid #b45309;
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.5), 0 8px 10px -6px rgba(180, 83, 9, 0.2);
+            backdrop-filter: blur(8px);
+        }
+
+        .gold-gradient-text {
+            background: linear-gradient(135deg, #fef08a 0%, #f59e0b 50%, #b45309 100%);
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+        }
+
+        /* Focus evidente per accessibilità */
+        input:focus, select:focus, button:focus {
+            outline: 3px solid #fbbf24 !important;
+            outline-offset: 2px;
+        }
+    </style>
+</head>
+<body class="min-h-screen p-3 md:p-6 lg:p-8 flex flex-col items-center justify-start">
+
+    <!-- HEADER / TITOLO PRINCIPALE -->
+    <header class="w-full max-w-5xl text-center my-6 p-6 rounded-2xl bg-slate-900/90 border-2 border-amber-600/60 shadow-2xl">
+        <div class="flex justify-center items-center gap-3 mb-2">
+            <i data-lucide="flask-conical" class="w-10 h-10 text-amber-500"></i>
+            <h1 class="text-3xl sm:text-4xl md:text-5xl font-extrabold tracking-wide font-serif-title gold-gradient-text">
+                THE HOMEMADE ALCHEMIST
+            </h1>
+            <i data-lucide="sparkles" class="w-10 h-10 text-amber-500"></i>
+        </div>
+        <p class="text-xl sm:text-2xl text-amber-200/90 font-medium mt-1">
+            Laboratorio Grafico per Brix, Dosi e Conservabilità
+        </p>
+    </header>
+
+    <!-- CONTAINER PRINCIPALE TABBED / SEZIONI -->
+    <main class="w-full max-w-5xl space-y-8">
+
+        <!-- NAVIGAZIONE SCHEDE -->
+        <div class="grid grid-cols-1 md:grid-cols-3 gap-3">
+            <button onclick="switchTab('tab-blend')" id="btn-tab-blend" class="tab-btn py-4 px-6 rounded-xl font-bold text-xl sm:text-2xl transition-all border-2 flex items-center justify-center gap-3 bg-amber-600 text-slate-950 border-amber-400 shadow-lg">
+                <i data-lucide="layers" class="w-7 h-7"></i> 1. Miscela Brix
+            </button>
+            <button onclick="switchTab('tab-target')" id="btn-tab-target" class="tab-btn py-4 px-6 rounded-xl font-bold text-xl sm:text-2xl transition-all border-2 flex items-center justify-center gap-3 bg-slate-800 text-amber-200 border-slate-700 hover:border-amber-600">
+                <i data-lucide="target" class="w-7 h-7"></i> 2. Target Zucchero
+            </button>
+            <button onclick="switchTab('tab-diary')" id="btn-tab-diary" class="tab-btn py-4 px-6 rounded-xl font-bold text-xl sm:text-2xl transition-all border-2 flex items-center justify-center gap-3 bg-slate-800 text-amber-200 border-slate-700 hover:border-amber-600">
+                <i data-lucide="notebook-pen" class="w-7 h-7"></i> 3. Report & Diario
+            </button>
+        </div>
+
+        <!-- SEZIONE 1: CALCOLATORE BRIX DI MISCELA -->
+        <section id="tab-blend" class="tab-content card-alchemy p-6 sm:p-8 rounded-2xl">
+            <div class="border-b-2 border-amber-600/40 pb-4 mb-6">
+                <h2 class="text-2xl sm:text-3xl font-bold text-amber-400 flex items-center gap-3">
+                    <i data-lucide="calculator" class="w-8 h-8 text-amber-500"></i> Calcolo Brix di Miscela
+                </h2>
+                <p class="text-lg text-slate-300 mt-1">Aggiungi gli ingredienti con il loro peso e gradi Brix per calcolare la concentrazione totale.</p>
+            </div>
+
+            <!-- TABELLA / LISTA INGREDIENTI -->
+            <div id="ingredients-list" class="space-y-4 mb-6">
+                <!-- Verranno generati dinamicamente via JS -->
+            </div>
+
+            <!-- AZIONI ED ELEMENTI AGGIUNTA -->
+            <div class="flex flex-wrap gap-4 mb-8">
+                <button onclick="addIngredientRow()" class="flex-1 bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-4 px-6 rounded-xl border-2 border-emerald-400 flex items-center justify-center gap-3 shadow-lg text-xl">
+                    <i data-lucide="plus-circle" class="w-7 h-7"></i> Aggiungi Ingrediente
+                </button>
+                <button onclick="resetBlendCalculator()" class="bg-slate-700 hover:bg-slate-600 text-slate-200 font-bold py-4 px-6 rounded-xl border-2 border-slate-500 flex items-center justify-center gap-2 text-xl">
+                    <i data-lucide="rotate-ccw" class="w-6 h-6"></i> Reset
+                </button>
+            </div>
+
+            <!-- SELEZIONE INGREDIENTI PRESET RAPIDI -->
+            <div class="bg-slate-900/80 p-4 rounded-xl border border-slate-700 mb-8">
+                <label class="block text-amber-300 text-lg font-bold mb-2">Aggiungi da Preset Rapidi:</label>
+                <div class="flex flex-wrap gap-2" id="preset-buttons">
+                    <!-- Bottoni preset generati da JS -->
+                </div>
+            </div>
+
+            <!-- PANNELLO RISULTATI MISCELA -->
+            <div class="bg-slate-950 p-6 sm:p-8 rounded-2xl border-2 border-amber-500/80 shadow-2xl space-y-6">
+                <h3 class="text-2xl sm:text-3xl font-extrabold text-amber-400 border-b border-slate-800 pb-3">
+                    Risultato Finale Miscela
+                </h3>
+
+                <div class="grid grid-cols-1 md:grid-cols-3 gap-6 text-center">
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                        <span class="block text-slate-400 text-lg font-semibold mb-1">Peso Totale</span>
+                        <span id="res-blend-weight" class="text-3xl sm:text-4xl font-extrabold text-amber-300">0.0 g</span>
+                    </div>
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                        <span class="block text-slate-400 text-lg font-semibold mb-1">Zucchero Totale</span>
+                        <span id="res-blend-sugar" class="text-3xl sm:text-4xl font-extrabold text-amber-300">0.0 g</span>
+                    </div>
+                    <div class="bg-amber-950/60 p-4 rounded-xl border-2 border-amber-500">
+                        <span class="block text-amber-200 text-lg font-bold mb-1">Brix Finale Miscela</span>
+                        <span id="res-blend-brix" class="text-4xl sm:text-5xl font-black text-amber-400">0.0 °Bx</span>
+                    </div>
+                </div>
+
+                <!-- INDICATORE CONSERVABILITÀ -->
+                <div id="stability-card" class="p-5 rounded-xl border-2 transition-all">
+                    <!-- Dinamico -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SEZIONE 2: CORREZIONE ZUCCHERO (TARGET BRIX) -->
+        <section id="tab-target" class="tab-content card-alchemy p-6 sm:p-8 rounded-2xl hidden">
+            <div class="border-b-2 border-amber-600/40 pb-4 mb-6">
+                <h2 class="text-2xl sm:text-3xl font-bold text-amber-400 flex items-center gap-3">
+                    <i data-lucide="scale" class="w-8 h-8 text-amber-500"></i> Calcolo Correzione Zucchero (Target Brix)
+                </h2>
+                <p class="text-lg text-slate-300 mt-1">Calcola esattamente quanti grammi di zucchero aggiungere per raggiungere il Brix desiderato.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
+                <div>
+                    <label class="block text-amber-200 text-xl font-bold mb-2">1. Peso Liquido Iniziale (g)</label>
+                    <input type="number" id="target-weight" value="500" min="0" step="1" oninput="calculateTargetSugar()"
+                        class="w-full bg-slate-900 border-2 border-amber-600/80 rounded-xl p-4 text-white font-bold text-2xl focus:border-amber-400">
+                </div>
+                <div>
+                    <label class="block text-amber-200 text-xl font-bold mb-2">2. Brix Attuale (°Bx)</label>
+                    <input type="number" id="target-current-brix" value="10" min="0" max="100" step="0.1" oninput="calculateTargetSugar()"
+                        class="w-full bg-slate-900 border-2 border-amber-600/80 rounded-xl p-4 text-white font-bold text-2xl focus:border-amber-400">
+                </div>
+                <div>
+                    <label class="block text-amber-200 text-xl font-bold mb-2">3. Brix Desiderato (°Bx)</label>
+                    <input type="number" id="target-desired-brix" value="55" min="0" max="99.9" step="0.1" oninput="calculateTargetSugar()"
+                        class="w-full bg-slate-900 border-2 border-amber-600/80 rounded-xl p-4 text-amber-300 font-bold text-2xl focus:border-amber-400">
+                </div>
+            </div>
+
+            <!-- RISULTATO CALCOLO TARGET -->
+            <div class="bg-slate-950 p-6 sm:p-8 rounded-2xl border-2 border-amber-500/80 shadow-2xl space-y-6 text-center">
+                <span class="block text-2xl text-amber-200 font-bold">Zucchero Semolato da Aggiungere:</span>
+                <div id="res-target-sugar" class="text-5xl sm:text-6xl font-black text-amber-400 gold-gradient-text">
+                    0.0 g
+                </div>
+                <div class="grid grid-cols-1 md:grid-cols-2 gap-4 text-left pt-4 border-t border-slate-800">
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 text-lg block">Peso Finale Previsto:</span>
+                        <span id="res-target-final-weight" class="text-2xl font-bold text-slate-200">0.0 g</span>
+                    </div>
+                    <div class="bg-slate-900 p-4 rounded-xl border border-slate-800">
+                        <span class="text-slate-400 text-lg block">Aumento di Peso:</span>
+                        <span id="res-target-increase" class="text-2xl font-bold text-emerald-400">+0.0 %</span>
+                    </div>
+                </div>
+                <!-- Stabilità del Target -->
+                <div id="target-stability-card" class="p-4 rounded-xl border-2 text-left">
+                    <!-- Generato dinamicamente -->
+                </div>
+            </div>
+        </section>
+
+        <!-- SEZIONE 3: REPORT & DIARIO ALCHEMICO -->
+        <section id="tab-diary" class="tab-content card-alchemy p-6 sm:p-8 rounded-2xl hidden">
+            <div class="border-b-2 border-amber-600/40 pb-4 mb-6">
+                <h2 class="text-2xl sm:text-3xl font-bold text-amber-400 flex items-center gap-3">
+                    <i data-lucide="file-text" class="w-8 h-8 text-amber-500"></i> Generatore Scheda Diario
+                </h2>
+                <p class="text-lg text-slate-300 mt-1">Compila i dettagli dell'esperimento e genera il testo formattato pronto per il tuo Diario dell'Alchimista.</p>
+            </div>
+
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6 mb-6">
+                <div>
+                    <label class="block text-amber-200 text-xl font-bold mb-2">Nome Preparazione</label>
+                    <input type="text" id="diary-title" value="Sciroppo Oleosaccharum Agrumi & Spezie" 
+                        class="w-full bg-slate-900 border-2 border-slate-700 rounded-xl p-4 text-white font-semibold text-xl">
+                </div>
+                <div>
+                    <label class="block text-amber-200 text-xl font-bold mb-2">Codice Batch / Esperimento</label>
+                    <input type="text" id="diary-code" value="EXP-2026-B21" 
+                        class="w-full bg-slate-900 border-2 border-slate-700 rounded-xl p-4 text-white font-semibold text-xl">
+                </div>
+            </div>
+
+            <div class="mb-6">
+                <label class="block text-amber-200 text-xl font-bold mb-2">Note di Estrazione & Botanici</label>
+                <textarea id="diary-notes" rows="3" class="w-full bg-slate-900 border-2 border-slate-700 rounded-xl p-4 text-white text-lg"
+                    placeholder="E' stato utilizzato un processo a freddo di 24 ore..."></textarea>
+            </div>
+
+            <div class="flex flex-wrap gap-4 mb-6">
+                <button onclick="generateDiaryReport()" class="flex-1 bg-amber-600 hover:bg-amber-500 text-slate-950 font-extrabold py-4 px-6 rounded-xl border-2 border-amber-300 flex items-center justify-center gap-3 text-xl shadow-lg">
+                    <i data-lucide="refresh-cw" class="w-6 h-6"></i> Genera Scheda Report
+                </button>
+                <button onclick="copyDiaryReport()" class="bg-emerald-700 hover:bg-emerald-600 text-white font-bold py-4 px-6 rounded-xl border-2 border-emerald-400 flex items-center justify-center gap-2 text-xl">
+                    <i data-lucide="copy" class="w-6 h-6"></i> Copia negli Appunti
+                </button>
+            </div>
+
+            <!-- AREA TESTO REPORT -->
+            <div>
+                <label class="block text-amber-300 text-xl font-bold mb-2">Anteprima Report Formattato:</label>
+                <textarea id="diary-output" rows="12" readonly
+                    class="w-full bg-slate-950 border-2 border-amber-600/60 rounded-xl p-5 text-amber-200 font-mono text-lg leading-relaxed shadow-inner"></textarea>
+            </div>
+        </section>
+
+    </main>
+
+    <!-- NOTIFICA MESSAGGIO TOAST -->
+    <div id="toast" class="fixed bottom-6 right-6 bg-emerald-600 text-white font-bold text-xl px-6 py-4 rounded-xl shadow-2xl border-2 border-emerald-300 hidden flex items-center gap-3 z-50">
+        <i data-lucide="check-circle-2" class="w-7 h-7"></i>
+        <span id="toast-msg">Copiato negli appunti con successo!</span>
+    </div>
+
+    <!-- SCRIPT DI LOGICA E INTERAZIONE -->
+    <script>
+        // Preset rapidi per ingredienti comuni con loro °Bx medio
+        const PRESETS = [
+            { name: 'Succo Limone/Lime', brix: 8.0 },
+            { name: 'Succo Arancia', brix: 11.5 },
+            { name: 'Succo Ananas', brix: 13.0 },
+            { name: 'Zucchero Semolato', brix: 100.0 },
+            { name: 'Miele Purissimo', brix: 82.0 },
+            { name: 'Sciroppo 1:1', brix: 50.0 },
+            { name: 'Sciroppo 2:1', brix: 66.5 },
+            { name: 'Acqua Purificata', brix: 0.0 }
+        ];
+
+        // Lista dinamica ingredienti per Calcolatore Miscela
+        let blendIngredients = [
+            { id: 1, name: 'Succo di Lampone', weight: 500, brix: 10.0 },
+            { id: 2, name: 'Zucchero Semolato', weight: 500, brix: 100.0 }
+        ];
+
+        let nextId = 3;
+
+        // Inizializzazione pagina
+        window.onload = function() {
+            lucide.createIcons();
+            renderPresets();
+            renderBlendIngredients();
+            calculateTargetSugar();
+            generateDiaryReport();
+        };
+
+        // Cambio Schede (Tab)
+        function switchTab(tabId) {
+            document.querySelectorAll('.tab-content').forEach(el => el.classList.add('hidden'));
+            document.querySelectorAll('.tab-btn').forEach(el => {
+                el.classList.remove('bg-amber-600', 'text-slate-950', 'border-amber-400');
+                el.classList.add('bg-slate-800', 'text-amber-200', 'border-slate-700');
+            });
+
+            document.getElementById(tabId).classList.remove('hidden');
+            const activeBtn = document.getElementById('btn-' + tabId);
+            activeBtn.classList.remove('bg-slate-800', 'text-amber-200', 'border-slate-700');
+            activeBtn.classList.add('bg-amber-600', 'text-slate-950', 'border-amber-400');
+        }
+
+        // Renderizza bottoni preset
+        function renderPresets() {
+            const container = document.getElementById('preset-buttons');
+            container.innerHTML = '';
+            PRESETS.forEach(p => {
+                const btn = document.createElement('button');
+                btn.className = 'bg-slate-800 hover:bg-amber-700 text-amber-200 font-bold py-2 px-4 rounded-lg text-lg border border-amber-600/40 transition-colors';
+                btn.innerText = `+ ${p.name} (${p.brix}°Bx)`;
+                btn.onclick = () => addPresetIngredient(p.name, p.brix);
+                container.appendChild(btn);
+            });
+        }
+
+        // Renderizza righe ingredienti miscela
+        function renderBlendIngredients() {
+            const container = document.getElementById('ingredients-list');
+            container.innerHTML = '';
+
+            blendIngredients.forEach((ing, index) => {
+                const row = document.createElement('div');
+                row.className = 'grid grid-cols-1 sm:grid-cols-12 gap-3 items-center bg-slate-900/90 p-4 rounded-xl border border-slate-700 shadow-md';
+                row.innerHTML = `
+                    <div class="sm:col-span-5">
+                        <label class="block text-slate-400 text-sm font-bold mb-1 sm:hidden">Nome Ingrediente</label>
+                        <input type="text" value="${ing.name}" onchange="updateIngredient(${ing.id}, 'name', this.value)"
+                            placeholder="Nome ingrediente" class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-white font-semibold text-xl">
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label class="block text-slate-400 text-sm font-bold mb-1 sm:hidden">Peso (g)</label>
+                        <div class="relative">
+                            <input type="number" value="${ing.weight}" min="0" step="1" oninput="updateIngredient(${ing.id}, 'weight', parseFloat(this.value) || 0)"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-amber-300 font-bold text-xl pr-8">
+                            <span class="absolute right-3 top-3 text-slate-500 font-bold">g</span>
+                        </div>
+                    </div>
+                    <div class="sm:col-span-3">
+                        <label class="block text-slate-400 text-sm font-bold mb-1 sm:hidden">Brix (°Bx)</label>
+                        <div class="relative">
+                            <input type="number" value="${ing.brix}" min="0" max="100" step="0.1" oninput="updateIngredient(${ing.id}, 'brix', parseFloat(this.value) || 0)"
+                                class="w-full bg-slate-950 border border-slate-700 rounded-lg p-3 text-amber-300 font-bold text-xl pr-12">
+                            <span class="absolute right-3 top-3 text-slate-500 font-bold">°Bx</span>
+                        </div>
+                    </div>
+                    <div class="sm:col-span-1 flex justify-end">
+                        <button onclick="removeIngredient(${ing.id})" class="bg-rose-950 hover:bg-rose-800 text-rose-300 p-3 rounded-lg border border-rose-700 transition-colors w-full sm:w-auto flex justify-center" title="Rimuovi">
+                            <i data-lucide="trash-2" class="w-6 h-6"></i>
+                        </button>
+                    </div>
+                `;
+                container.appendChild(row);
+            });
+
+            lucide.createIcons();
+            calculateBlend();
+        }
+
+        function addIngredientRow() {
+            blendIngredients.push({ id: nextId++, name: `Ingrediente ${blendIngredients.length + 1}`, weight: 100, brix: 10.0 });
+            renderBlendIngredients();
+        }
+
+        function addPresetIngredient(name, brix) {
+            blendIngredients.push({ id: nextId++, name: name, weight: 100, brix: brix });
+            renderBlendIngredients();
+        }
+
+        function removeIngredient(id) {
+            if (blendIngredients.length <= 1) {
+                showToast("Devi mantenere almeno un ingrediente!");
+                return;
+            }
+            blendIngredients = blendIngredients.filter(ing => ing.id !== id);
+            renderBlendIngredients();
+        }
+
+        function updateIngredient(id, field, value) {
+            const ing = blendIngredients.find(i => i.id === id);
+            if (ing) {
+                ing[field] = value;
+                calculateBlend();
+            }
+        }
+
+        function resetBlendCalculator() {
+            blendIngredients = [
+                { id: 1, name: 'Succo di Lampone', weight: 500, brix: 10.0 },
+                { id: 2, name: 'Zucchero Semolato', weight: 500, brix: 100.0 }
+            ];
+            renderBlendIngredients();
+        }
+
+        // Calcolo Miscela Brix
+        function calculateBlend() {
+            let totalWeight = 0;
+            let totalSugar = 0;
+
+            blendIngredients.forEach(ing => {
+                const w = Math.max(0, parseFloat(ing.weight) || 0);
+                const b = Math.max(0, Math.min(100, parseFloat(ing.brix) || 0));
+                totalWeight += w;
+                totalSugar += (w * b) / 100;
+            });
+
+            const finalBrix = totalWeight > 0 ? (totalSugar / totalWeight) * 100 : 0;
+
+            document.getElementById('res-blend-weight').innerText = `${totalWeight.toFixed(1)} g`;
+            document.getElementById('res-blend-sugar').innerText = `${totalSugar.toFixed(1)} g`;
+            document.getElementById('res-blend-brix').innerText = `${finalBrix.toFixed(1)} °Bx`;
+
+            updateStabilityIndicator('stability-card', finalBrix);
+        }
+
+        // Calcolo Correzione Zucchero Target
+        function calculateTargetSugar() {
+            const w1 = parseFloat(document.getElementById('target-weight').value) || 0;
+            const b1 = parseFloat(document.getElementById('target-current-brix').value) || 0;
+            const b2 = parseFloat(document.getElementById('target-desired-brix').value) || 0;
+
+            if (b2 <= b1) {
+                document.getElementById('res-target-sugar').innerText = "0.0 g (Brix Target ≤ Attuale)";
+                document.getElementById('res-target-final-weight').innerText = `${w1.toFixed(1)} g`;
+                document.getElementById('res-target-increase').innerText = "0.0 %";
+                updateStabilityIndicator('target-stability-card', b1);
+                return;
+            }
+
+            if (b2 >= 100) {
+                document.getElementById('res-target-sugar').innerText = "Impossibile (Brix ≥ 100)";
+                return;
+            }
+
+            // Formula: Zucchero da aggiungere = W1 * (B2 - B1) / (100 - B2)
+            const sugarToAdd = w1 * ((b2 - b1) / (100 - b2));
+            const finalWeight = w1 + sugarToAdd;
+            const percentageIncrease = (sugarToAdd / w1) * 100;
+
+            document.getElementById('res-target-sugar').innerText = `+ ${sugarToAdd.toFixed(1)} g`;
+            document.getElementById('res-target-final-weight').innerText = `${finalWeight.toFixed(1)} g`;
+            document.getElementById('res-target-increase').innerText = `+${percentageIncrease.toFixed(1)} %`;
+
+            updateStabilityIndicator('target-stability-card', b2);
+        }
+
+        // Aggiorna indicatore grafico di stabilità e conservabilità
+        function updateStabilityIndicator(cardId, brix) {
+            const card = document.getElementById(cardId);
+            let colorClass = '';
+            let icon = '';
+            let title = '';
+            let desc = '';
+
+            if (brix < 50) {
+                colorClass = 'bg-rose-950/80 border-rose-500 text-rose-100';
+                icon = 'alert-triangle';
+                title = 'Bassa Pressione Osmotica (< 50°Bx) — Stabilità Bassa';
+                desc = 'Conservare obbligatoriamente in frigorifero (4°C). Durata stimata: 7–14 giorni. Consiglio: Aggiungere acidificanti o alcol per estendere la conservazione.';
+            } else if (brix >= 50 && brix < 65) {
+                colorClass = 'bg-amber-950/80 border-amber-500 text-amber-100';
+                icon = 'shield-alert';
+                title = 'Media Pressione Osmotica (50°Bx - 64°Bx) — Stabilità Media';
+                desc = 'Conservare in frigorifero. Durata stimata: 30–60 giorni. Rischio di fermentazione batterica ridotto ma presente a temperatura ambiente.';
+            } else {
+                colorClass = 'bg-emerald-950/80 border-emerald-500 text-emerald-100';
+                icon = 'shield-check';
+                title = 'Elevata Pressione Osmotica (≥ 65°Bx) — Rich Syrup / Alta Stabilità';
+                desc = 'Elevata conservabilità anche a temperatura ambiente se imbottigliato in sterilizzato. Pressione osmotica elevata. Minimo rischio batterico.';
+            }
+
+            card.className = `p-5 rounded-xl border-2 transition-all ${colorClass}`;
+            card.innerHTML = `
+                <div class="flex items-start gap-4">
+                    <i data-lucide="${icon}" class="w-8 h-8 flex-shrink-0 mt-1"></i>
+                    <div>
+                        <h4 class="text-xl sm:text-2xl font-bold mb-1">${title}</h4>
+                        <p class="text-lg opacity-90">${desc}</p>
+                    </div>
+                </div>
+            `;
+            lucide.createIcons();
+        }
+
+        // Genera il Report Formattato per il Diario Alchemico
+        function generateDiaryReport() {
+            const name = document.getElementById('diary-title').value || 'Senza Nome';
+            const code = document.getElementById('diary-code').value || 'EXP-000';
+            const notes = document.getElementById('diary-notes').value || 'Nessuna nota aggiuntiva.';
+
+            let ingredientsText = '';
+            let totalW = 0;
+            let totalS = 0;
+
+            blendIngredients.forEach(ing => {
+                const w = parseFloat(ing.weight) || 0;
+                const b = parseFloat(ing.brix) || 0;
+                const s = (w * b) / 100;
+                totalW += w;
+                totalS += s;
+                ingredientsText += `  • ${ing.name.padEnd(25, ' ')} : ${w.toFixed(1).padStart(6, ' ')} g  |  ${b.toFixed(1).padStart(5, ' ')} °Bx\n`;
+            });
+
+            const finalBrix = totalW > 0 ? (totalS / totalW) * 100 : 0;
+            const dateStr = new Date().toLocaleDateString('it-IT', { year: 'numeric', month: 'long', day: 'numeric' });
+
+            const report = `================================================================
+  THE HOMEMADE ALCHEMIST — SCHEDA DIARIO SPERIMENTALE
+================================================================
+PREPARAZIONE : ${name}
+CODICE BATCH : ${code}
+DATA         : ${dateStr}
+----------------------------------------------------------------
+1. COMPOSIZIONE MISCELA & DOSI:
+${ingredientsText}
+----------------------------------------------------------------
+2. PARAMETRI FINALI RILEVATI:
+  • Peso Totale Miscela    : ${totalW.toFixed(1)} g
+  • Zucchero Totale        : ${totalS.toFixed(1)} g
+  • Concentrazione Finale  : ${finalBrix.toFixed(1)} °Bx
+
+3. STIMA DI CONSERVAZIONE:
+  • Classe Stabilità       : ${finalBrix >= 65 ? 'ALTA (Rich Syrup)' : finalBrix >= 50 ? 'MEDIA (Frigo consigliato)' : 'BASSA (Frigo obbligatorio)'}
+  • Indicazione            : ${finalBrix >= 65 ? 'Conservabile a T ambiente in flaconi sterilizzati.' : 'Mantenere a 4°C e consumare nei tempi prestabiliti.'}
+
+4. NOTE ALCHEMICHE & BOTANICI:
+  ${notes}
+================================================================`;
+
+            document.getElementById('diary-output').value = report;
+        }
+
+        // Copia il testo negli appunti
+        function copyDiaryReport() {
+            generateDiaryReport();
+            const output = document.getElementById('diary-output');
+            output.select();
+            document.execCommand('copy');
+            showToast("Report dell'esperimento copiato negli appunti!");
+        }
+
+        // Mostra notifica Toast
+        function showToast(message) {
+            const toast = document.getElementById('toast');
+            document.getElementById('toast-msg').innerText = message;
+            toast.classList.remove('hidden');
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+    </script>
+</body>
+</html>
